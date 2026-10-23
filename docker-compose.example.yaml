@@ -3,7 +3,7 @@
 services:
   piper:
     build: ./home-assistant-polish-piper
-    image: local/polish-piper
+    image: local/polish-piper:2.5.2
     container_name: piper
     restart: unless-stopped
     ports:

@@ -1,10 +1,13 @@
 # Zmiany
 
-Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersje: [SemVer](https://semver.org/lang/pl/).
+Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/). Numer wersji to wersja
+`wyoming-piper` w obrazie; poprawki samej normalizacji na tym samym Piperze dostają dopisek
+`-2`, `-3`… (np. `2.5.2-2`).
 
-## [0.1.0] - 2026-10-24
+## [2.5.2] - 2026-10-24
 
-Pierwsze publiczne wydanie. Wcześniejsze etapy prac (wersje 1–3 z października 2026) opisuje
+Pierwsze publiczne wydanie: `wyoming-piper` 2.5.2 (silnik `piper-tts` 1.8.0), Morfeusz 2
+ze słownikiem SGJP 20261018. Wcześniejsze etapy prac (wersje 1–3 z października 2026) opisuje
 README, rozdział „Jak do tego doszliśmy”.
 
 ### Dodane

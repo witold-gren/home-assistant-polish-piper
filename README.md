@@ -211,7 +211,7 @@ Jetson). GPU nie jest potrzebne: głosy „medium” są na procesorze szybkie.
    services:
      piper:
        build: ./home-assistant-polish-piper
-       image: local/polish-piper
+       image: local/polish-piper:2.5.2
        container_name: piper
        restart: unless-stopped
        ports:
@@ -258,8 +258,17 @@ Jetson). GPU nie jest potrzebne: głosy „medium” są na procesorze szybkie.
    ```
 
 Powrót do oryginału: w `docker-compose.yaml` zamień `build:` na
-`image: rhasspy/wyoming-piper:2.5.2` i usuń `image: local/polish-piper`. Głosy zostają w tym
+`image: rhasspy/wyoming-piper:2.5.2` i usuń `image: local/polish-piper:2.5.2`. Głosy zostają w tym
 samym katalogu.
+
+### Wersje
+
+Numer wersji tego repozytorium to **wersja `wyoming-piper` w obrazie**: `v2.5.2` to
+`rhasspy/wyoming-piper:2.5.2` (silnik `piper-tts` 1.8.0) z normalizacją. Dzięki temu łatwo
+przepiąć się między oryginałem a tą wersją i od razu widać, na którym Piperze działa obraz.
+Poprawki samej normalizacji na tym samym Piperze dostają dopisek: `v2.5.2-2`, `v2.5.2-3`…
+Konkretne wydanie: `git -C home-assistant-polish-piper checkout v2.5.2`, potem
+`docker compose build piper`.
 
 ## Konfiguracja
 
@@ -299,7 +308,7 @@ Testy (378 przypadków: tekst → oczekiwane słowa) uruchamia się w obrazie, b
 ```sh
 docker compose build piper
 docker run --rm --entrypoint bash \
-  -v "$PWD/home-assistant-polish-piper/tests:/usr/src/tests:ro" local/polish-piper \
+  -v "$PWD/home-assistant-polish-piper/tests:/usr/src/tests:ro" local/polish-piper:2.5.2 \
   -c "cd /usr/src && .venv/bin/pip3 install -q pytest && .venv/bin/python3 -m pytest -q tests"
 ```
 
@@ -313,7 +322,7 @@ Poprawka błędu:
 
 ```sh
 docker run --rm --entrypoint bash -v "$PWD/home-assistant-polish-piper:/w:ro" -v "$HOME/hass_token:/token:ro" \
-  local/polish-piper -c "cd /w && /usr/src/.venv/bin/python3 tools/ha_audit.py \
+  local/polish-piper:2.5.2 -c "cd /w && /usr/src/.venv/bin/python3 tools/ha_audit.py \
   --api http://192.168.1.10:8123 --token-file /token"
 ```
 

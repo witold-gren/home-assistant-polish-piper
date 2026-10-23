@@ -11,7 +11,7 @@ Data source (one of):
     python tools/ha_audit.py --api http://192.168.1.10:8123 --token-file ~/hass_token
 
 Run it inside the Piper image (Morfeusz is there):
-    docker run --rm --entrypoint bash -v "$PWD:/w" local/polish-piper \
+    docker run --rm --entrypoint bash -v "$PWD:/w" local/polish-piper:2.5.2 \
         -c "cd /w && /usr/src/.venv/bin/python3 tools/ha_audit.py --api ... --token-file ..."
 """
 
