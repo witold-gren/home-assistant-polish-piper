@@ -1,0 +1,26 @@
+# Polski Piper: usługa do wklejenia do własnego docker-compose.yaml.
+# Repozytorium pobrane obok: git clone https://github.com/witold-gren/home-assistant-polish-piper
+services:
+  piper:
+    build: ./home-assistant-polish-piper
+    image: local/polish-piper
+    container_name: piper
+    restart: unless-stopped
+    ports:
+      - "10200:10200"            # Wyoming - adres dla Home Assistant
+      - "10205:5000"             # opcjonalnie: panel WWW do głosów
+    volumes:
+      - ./piper/models:/data     # głosy: *.onnx + *.onnx.json
+      - /etc/localtime:/etc/localtime:ro
+    # Argumenty jak w rhasspy/wyoming-piper (obraz sam dodaje --uri i --data-dir)
+    command:
+      - --voice=pl_PL-gosia-medium       # albo Twój własny głos z ./piper/models
+      - --length-scale=1.0               # tempo (większe = wolniej)
+      - --sentence-silence=0.25          # pauza między zdaniami (s)
+      - --update-voices                  # aktualna lista głosów przy starcie
+      # Panel głosów nie ma logowania - wystawiaj go tylko w sieci domowej:
+      # - --web-server
+      # - --web-server-host=0.0.0.0
+      # - --web-server-allow=192.168.1.0/24
+    # environment:
+    #   PL_TTS_NORMALIZE: "0"            # wyłącza normalizację bez przebudowy
