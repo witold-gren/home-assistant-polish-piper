@@ -18,8 +18,9 @@ jest zamieniany na słowa, z poprawną odmianą:
 | `z 2 osobami`, `brakuje 2 osób` | „z dwa osobami”, „brakuje dwa osób” | „z dwiema osobami”, „brakuje dwóch osób” |
 | `ul. Kwiatowa 30/2` | „ul…” | „ulica Kwiatowa trzydzieści łamane przez dwa” |
 
-Działa z **każdym polskim głosem** Pipera, również z samodzielnie wytrenowanym, i z każdym
-źródłem tekstu: odpowiedziami Assista, `tts.speak`, automatyzacjami, skryptami i modelami LLM.
+Działa z **każdym polskim głosem** Pipera, również z samodzielnie wytrenowanym (np.
+[polskie głosy z Hugging Face](https://huggingface.co/WitoldG/polish_piper_models), opisane w rozdziale
+[Polskie głosy](#polskie-głosy)), i z każdym źródłem tekstu: odpowiedziami Assista, `tts.speak`, automatyzacjami, skryptami i modelami LLM.
 
 Repozytorium jest tylko po polsku, bo rozwiązuje problem specyficzny dla języka polskiego.
 
@@ -30,6 +31,7 @@ Repozytorium jest tylko po polsku, bo rozwiązuje problem specyficzny dla język
 - [Co robi ta wersja, a czego nie robi oryginał](#co-robi-ta-wersja-a-czego-nie-robi-oryginał)
 - [Czego nie robi](#czego-nie-robi)
 - [Instalacja](#instalacja)
+- [Polskie głosy](#polskie-głosy)
 - [Konfiguracja](#konfiguracja)
 - [Jak to działa w środku](#jak-to-działa-w-środku)
 - [Rozwój i testy](#rozwój-i-testy)
@@ -270,7 +272,40 @@ Poprawki samej normalizacji na tym samym Piperze dostają dopisek: `v2.5.2-2`, `
 Konkretne wydanie: `git -C home-assistant-polish-piper checkout v2.5.2`, potem
 `docker compose build piper`.
 
-## Konfiguracja
+## Polskie głosy
+
+Oprócz oficjalnych polskich głosów Pipera (`pl_PL-gosia-medium`, `pl_PL-darkman-medium`,
+`pl_PL-mc_speech-medium`, pobieranych automatycznie przy pierwszym użyciu) możesz użyć głosów
+z repozytorium **[WitoldG/polish_piper_models](https://huggingface.co/WitoldG/polish_piper_models)** na Hugging Face. Są tam cztery polskie
+głosy „medium”, każdy z próbkami nagrań do odsłuchania:
+
+| Głos | Plik |
+|---|---|
+| Jarvis | `pl_PL-jarvis_wg_glos-medium` |
+| Justyna | `pl_PL-justyna_wg_glos-medium` |
+| Męski | `pl_PL-meski_wg_glos-medium` |
+| Żeński | `pl_PL-zenski_wg_glos-medium` |
+
+Głosy dotrenowano na RTX 4090 na 1600–2000 nagraniach na głos, startując z angielskiego
+punktu kontrolnego `lessac` (ok. 10 godzin na głos). Licencja: MIT.
+
+Instalacja głosu w tym obrazie: pobierz oba pliki (`.onnx` i `.onnx.json`) do katalogu
+głosów i wskaż go w `--voice`:
+
+```sh
+cd piper/models
+v=pl_PL-meski_wg_glos-medium
+curl -LO https://huggingface.co/WitoldG/polish_piper_models/resolve/main/$v.onnx
+curl -LO https://huggingface.co/WitoldG/polish_piper_models/resolve/main/$v.onnx.json
+```
+
+```yaml
+    command:
+      - --voice=pl_PL-meski_wg_glos-medium
+```
+
+Po `docker compose up -d piper` przeładuj integrację Wyoming w HA: nowy głos pojawi się na
+liście głosów Pipera. Głos można też wgrać przez panel WWW (`--web-server`).
 
 | Co | Gdzie |
 |---|---|
