@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Zbuduj obraz (Morfeusz + pl_tts)
+      - name: Build the image (Morfeusz + pl_tts)
         run: docker build -t polish-piper .
-      - name: Testy normalizacji w obrazie
+      - name: Normalization tests in the image
         run: |
           docker run --rm --entrypoint bash -v "$PWD/tests:/usr/src/tests:ro" polish-piper \
             -c "cd /usr/src && .venv/bin/pip3 install -q pytest && .venv/bin/python3 -m pytest -q -p no:cacheprovider tests"

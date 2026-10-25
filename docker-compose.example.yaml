@@ -1,5 +1,5 @@
-# Polski Piper: usługa do wklejenia do własnego docker-compose.yaml.
-# Repozytorium pobrane obok: git clone https://github.com/witold-gren/home-assistant-polish-piper
+# Polish Piper: a service to paste into your own docker-compose.yaml.
+# Repository cloned next to it: git clone https://github.com/witold-gren/home-assistant-polish-piper
 services:
   piper:
     build: ./home-assistant-polish-piper
@@ -7,20 +7,20 @@ services:
     container_name: piper
     restart: unless-stopped
     ports:
-      - "10200:10200"            # Wyoming - adres dla Home Assistant
-      - "10205:5000"             # opcjonalnie: panel WWW do głosów
+      - "10200:10200"            # Wyoming - address for Home Assistant
+      - "10205:5000"             # optional: web panel for voices
     volumes:
-      - ./piper/models:/data     # głosy: *.onnx + *.onnx.json
+      - ./piper/models:/data     # voices: *.onnx + *.onnx.json
       - /etc/localtime:/etc/localtime:ro
-    # Argumenty jak w rhasspy/wyoming-piper (obraz sam dodaje --uri i --data-dir)
+    # Arguments as in rhasspy/wyoming-piper (the image adds --uri and --data-dir itself)
     command:
-      - --voice=pl_PL-gosia-medium       # albo Twój własny głos z ./piper/models
-      - --length-scale=1.0               # tempo (większe = wolniej)
-      - --sentence-silence=0.25          # pauza między zdaniami (s)
-      - --update-voices                  # aktualna lista głosów przy starcie
-      # Panel głosów nie ma logowania - wystawiaj go tylko w sieci domowej:
+      - --voice=pl_PL-gosia-medium       # or your own voice from ./piper/models
+      - --length-scale=1.0               # speed (larger = slower)
+      - --sentence-silence=0.25          # pause between sentences (s)
+      - --update-voices                  # refresh the voice list on start
+      # The voice panel has no login - expose it only on your home network:
       # - --web-server
       # - --web-server-host=0.0.0.0
       # - --web-server-allow=192.168.1.0/24
     # environment:
-    #   PL_TTS_NORMALIZE: "0"            # wyłącza normalizację bez przebudowy
+    #   PL_TTS_NORMALIZE: "0"            # turns normalization off without rebuilding

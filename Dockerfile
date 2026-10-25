@@ -1,12 +1,12 @@
-# Wyoming Piper 2.5.2 (piper1-gpl) + polska normalizacja tekstu (pl_tts) z
-# analizatorem morfologicznym Morfeusz 2 (IPI PAN, słownik SGJP).
-# Liczby, godziny, daty, jednostki i skróty są zamieniane na słowa, zanim
-# tekst trafi do espeak-ng; liczebniki odmieniają się zgodnie z rzeczownikiem.
+# Wyoming Piper 2.5.2 (piper1-gpl) + Polish text normalization (pl_tts) with
+# the Morfeusz 2 morphological analyser (IPI PAN, SGJP dictionary).
+# Numbers, times, dates, units and abbreviations are turned into words before
+# the text reaches espeak-ng; numerals agree with the noun they describe.
 
 ARG PIPER_IMAGE=rhasspy/wyoming-piper:2.5.2
 ARG MORFEUSZ_VERSION=20261018
 
-# --- etap 1: kompilacja Morfeusza (nie ma gotowych pakietów dla arm64) ------
+# --- stage 1: build Morfeusz (there are no ready packages for arm64) --------
 FROM ${PIPER_IMAGE} AS morfeusz
 ARG MORFEUSZ_VERSION
 RUN apt-get update \
@@ -16,8 +16,8 @@ RUN curl -fsSL -O http://download.sgjp.pl/morfeusz/${MORFEUSZ_VERSION}/morfeusz-
  && curl -fsSL -O http://download.sgjp.pl/morfeusz/${MORFEUSZ_VERSION}/morfeusz2-dictionary-sgjp-${MORFEUSZ_VERSION}.tgz \
  && tar xzf morfeusz-src-${MORFEUSZ_VERSION}.tar.gz \
  && mkdir -p /out/dict && tar xzf morfeusz2-dictionary-sgjp-${MORFEUSZ_VERSION}.tgz -C /out/dict
-# Bez nakładek Java i GUI oraz bez testów (wymagają JDK, Qt, cppunit);
-# setup.cfg wymusza tag koła x86_64 - usuwamy go, żeby powstało koło dla tej architektury
+# Without the Java and GUI wrappers and without tests (they need JDK, Qt, cppunit);
+# setup.cfg forces an x86_64 wheel tag - drop it so the wheel matches this architecture
 RUN sed -i 's/^add_subdirectory (java)/#add_subdirectory (java)/' Morfeusz/morfeusz/wrappers/CMakeLists.txt \
  && sed -i 's/^add_subdirectory (gui)/#&/; s/^add_subdirectory (fsabuilder)/#&/' Morfeusz/CMakeLists.txt \
  && mkdir b && cd b \
@@ -31,7 +31,7 @@ RUN sed -i 's/^add_subdirectory (java)/#add_subdirectory (java)/' Morfeusz/morfe
  && /usr/src/.venv/bin/pip3 install -q setuptools wheel \
  && /usr/src/.venv/bin/pip3 wheel -q --no-build-isolation --no-deps -w /out/wheels .
 
-# --- etap 2: Piper + Morfeusz + pl_tts ---------------------------------------
+# --- stage 2: Piper + Morfeusz + pl_tts --------------------------------------
 FROM ${PIPER_IMAGE}
 COPY --from=morfeusz /out/libmorfeusz2.so /usr/lib/
 COPY --from=morfeusz /out/dict/ /usr/share/morfeusz2/dictionaries/
@@ -40,9 +40,9 @@ RUN ldconfig && /usr/src/.venv/bin/pip3 install -q --no-deps /tmp/wheels/*.whl &
 
 COPY pl_tts/ /usr/src/pl_tts/
 
-# Kontrola przy budowaniu: Morfeusz działa, przykładowy tekst jest zamieniany
+# Build-time check: Morfeusz works and a sample text is normalized
 RUN cd /usr/src && .venv/bin/python3 -c "from pl_tts import normalize, morph; assert morph.AVAILABLE; print(normalize('O 9:05 jest -3,5°C, masz 1 otwartą roletę i 2 nowe wiadomości.'))"
 
-# Jak docker_run.sh z obrazu bazowego, ale przez pl_tts.run.
-# PL_TTS_NORMALIZE=0 wyłącza normalizację bez przebudowy.
+# Like docker_run.sh of the base image, but through pl_tts.run.
+# PL_TTS_NORMALIZE=0 turns normalization off without rebuilding.
 ENTRYPOINT ["bash", "-c", "cd /usr/src && exec .venv/bin/python3 -m pl_tts.run --uri tcp://0.0.0.0:10200 --data-dir /data \"$@\"", "--"]

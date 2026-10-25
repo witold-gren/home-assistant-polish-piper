@@ -64,7 +64,7 @@ CASES = [
     ("Temperatura spadnie do -5", "Temperatura spadnie do minus pięć"),
     ("pi to 3,14", "pi to trzy przecinek czternaście"),
     ("2026", "dwa tysiące dwadzieścia sześć"),
-    # --- numerals agreeing with the noun (gender_lexicon.json, Morfeusz 2)
+    # --- numerals agreeing with the noun (Morfeusz 2)
     ("1 osoba", "jedna osoba"),
     ("2 osoby", "dwie osoby"),
     ("22 osoby", "dwadzieścia dwie osoby"),
@@ -208,7 +208,7 @@ def test_idempotent(text: str, _: str) -> None:
 
 
 def test_no_digits_left() -> None:
-    sample = "O 9:05, 20.10.2026: -3,5°C, 50 km/h, 92%, 1 013 hPa, 12345678901."  # bez tokenów typu CO2
+    sample = "O 9:05, 20.10.2026: -3,5°C, 50 km/h, 92%, 1 013 hPa, 12345678901."  # no tokens like CO2
     assert not any(c.isdigit() for c in normalize(sample))
 
 
