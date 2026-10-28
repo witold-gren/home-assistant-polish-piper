@@ -6,6 +6,8 @@ Same arguments as `python -m wyoming_piper`. Two hooks in PiperEventHandler:
 - _handle_synthesize: every sentence, which also covers the streaming mode
   (synthesize-start/chunk/stop). normalize() is idempotent, so the second pass
   over already normalized text changes nothing.
+Own pronunciations come from PL_TTS_PRONUNCIATIONS (default
+/data/pronunciations.yaml) and are reloaded when the file changes.
 """
 
 from __future__ import annotations
@@ -18,16 +20,21 @@ from wyoming.tts import Synthesize
 from wyoming_piper import __main__ as piper_main
 from wyoming_piper.handler import PiperEventHandler
 
-from .normalize import normalize
+from .normalize import normalize, set_user_pronunciations
+from .pronunciations import UserPronunciations
 
 _LOGGER = logging.getLogger("pl_tts")
 _ENABLED = os.environ.get("PL_TTS_NORMALIZE", "1").lower() not in ("0", "false", "no", "off")
+_USER_PRONUNCIATIONS = UserPronunciations()
 
 
 def _normalized(text: str) -> str:
     if not _ENABLED or not text:
         return text
     try:
+        entries = _USER_PRONUNCIATIONS.refresh()
+        if entries is not None:
+            set_user_pronunciations(entries)
         result = normalize(text)
     except Exception:  # never lose speech because of a normalization bug
         _LOGGER.exception("Normalization failed, using original text: %r", text)

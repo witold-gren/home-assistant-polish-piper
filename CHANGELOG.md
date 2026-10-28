@@ -4,6 +4,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/). Numer wersji t
 `wyoming-piper` w obrazie; poprawki samej normalizacji na tym samym Piperze dostają dopisek
 `-2`, `-3`… (np. `2.5.2-2`).
 
+## [2.5.2-2] - 2026-10-28
+
+### Dodane
+- Własna wymowa bez przebudowy obrazu: plik `pronunciations.yaml` w katalogu głosów (`/data`),
+  ścieżka do zmiany przez `PL_TTS_PRONUNCIATIONS`, wczytywany na nowo po każdej zmianie.
+  Wzór: `pronunciations.example.yaml`.
+- Odmiana słów ze słownika wymowy: „Jarvisa” → „Dżarwisa”, „na iPhonie” → „ajfonie”,
+  „iPhone'a” → „ajfona”, „Alexę” → „Aleksę”.
+- „Jarvis” → „Dżarwis” w słowniku wymowy.
+- Sekcja „Konfiguracja” w README (spis treści linkował do niej, a jej nie było) i FAQ dla
+  własnej wymowy.
+
+### Zmienione
+- „ppm” czytane jako skrót: „tysiąc dwieście pięćdziesiąt ppm” zamiast „części na milion”.
+
+### Poprawione
+- Tysiące w przypadkach zależnych: „do 1000 km” → „do tysiąca kilometrów” (było „do tysiąc”).
+- Przedział „od 400 do 1000 ppm”: pierwsza liczba też w dopełniaczu („od czterystu”).
+- Jednostki nieodmienne (ppm) po przyimku: „do 5 ppm” → „do pięciu ppm”.
+- 434 testy.
+
 ## [2.5.2] - 2026-10-24
 
 Pierwsze publiczne wydanie: `wyoming-piper` 2.5.2 (silnik `piper-tts` 1.8.0), Morfeusz 2

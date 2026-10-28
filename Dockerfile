@@ -40,9 +40,10 @@ RUN ldconfig && /usr/src/.venv/bin/pip3 install -q --no-deps /tmp/wheels/*.whl &
 
 COPY pl_tts/ /usr/src/pl_tts/
 
-# Build-time check: Morfeusz works and a sample text is normalized
-RUN cd /usr/src && .venv/bin/python3 -c "from pl_tts import normalize, morph; assert morph.AVAILABLE; print(normalize('O 9:05 jest -3,5°C, masz 1 otwartą roletę i 2 nowe wiadomości.'))"
+# Build-time check: Morfeusz works, PyYAML is there (own pronunciations) and a sample text is normalized
+RUN cd /usr/src && .venv/bin/python3 -c "import yaml; from pl_tts import normalize, morph; assert morph.AVAILABLE; print(normalize('O 9:05 jest -3,5°C, masz 1 otwartą roletę i 2 nowe wiadomości, zapytaj Jarvisa.'))"
 
 # Like docker_run.sh of the base image, but through pl_tts.run.
-# PL_TTS_NORMALIZE=0 turns normalization off without rebuilding.
+# PL_TTS_NORMALIZE=0 turns normalization off without rebuilding; own pronunciations
+# are read from /data/pronunciations.yaml (PL_TTS_PRONUNCIATIONS changes the path).
 ENTRYPOINT ["bash", "-c", "cd /usr/src && exec .venv/bin/python3 -m pl_tts.run --uri tcp://0.0.0.0:10200 --data-dir /data \"$@\"", "--"]

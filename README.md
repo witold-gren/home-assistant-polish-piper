@@ -156,6 +156,19 @@ obraz kompiluje go ze źródeł. 316 testów.
 
 **378 testów.** Ta wersja działa na co dzień w domu autora.
 
+### Wersja 3.1: odmiana obcych słów i własna wymowa
+
+- słownik wymowy przenosi polskie końcówki: „zapytaj Jarvisa” → „Dżarwisa”, „na iPhonie” →
+  „ajfonie”, „z YouTube'a” → „Jutuba”, „Alexę” → „Aleksę”;
+- własny plik `pronunciations.yaml` w katalogu głosów, wczytywany na nowo po każdej zmianie,
+  bez przebudowy i restartu;
+- „ppm” czytane jako skrót („tysiąc dwieście pięćdziesiąt ppm”), tak jak mówi się o jakości
+  powietrza;
+- tysiące w przypadkach zależnych („do tysiąca kilometrów”, „bez dwóch tysięcy osób”) i oba
+  końce przedziału „od 400 do 1000 ppm” → „od czterystu do tysiąca ppm”.
+
+**434 testy.**
+
 ## Co robi ta wersja, a czego nie robi oryginał
 
 | | Oryginalny `wyoming-piper` 2.5.2 | Ten obraz |
@@ -168,7 +181,7 @@ obraz kompiluje go ze źródeł. 316 testów.
 | Skróty (ul., np., itd., ok., godz., tel.) | czyta jak słowa albo literuje | rozwija |
 | Kwoty, ułamki, wyniki, kody pocztowe, numery domów | cyfry i symbole | słowa |
 | Telefony, e-maile, adresy WWW, emotikony | literuje albo czyta symbole | czytelne słowa, emotikony pomijane |
-| Obce słowa i nazwy | polskie reguły dla angielskich słów | słownik wymowy, łatwy do rozszerzenia |
+| Obce słowa i nazwy | polskie reguły dla angielskich słów | słownik wymowy z odmianą („Jarvisa” → „Dżarwisa”) i własnym plikiem YAML |
 | Dziennik zmian tekstu | brak | `normalize: 'oryginał' -> 'tekst czytany'` |
 
 Wszystko inne działa jak w oryginale: te same argumenty, głosy, strumieniowanie, panel głosów,
@@ -220,7 +233,7 @@ Jetson). GPU nie jest potrzebne: głosy „medium” są na procesorze szybkie.
          - "10200:10200"          # Wyoming - adres dla Home Assistant
          - "10205:5000"           # opcjonalnie: panel WWW do głosów
        volumes:
-         - ./piper/models:/data   # głosy: *.onnx + *.onnx.json
+         - ./piper/models:/data   # głosy: *.onnx + *.onnx.json, własny pronunciations.yaml
          - /etc/localtime:/etc/localtime:ro
        command:
          - --voice=pl_PL-gosia-medium     # albo Twój własny głos z ./piper/models
@@ -233,6 +246,7 @@ Jetson). GPU nie jest potrzebne: głosy „medium” są na procesorze szybkie.
          # - --web-server-allow=192.168.1.0/24
        # environment:
        #   PL_TTS_NORMALIZE: "0"          # wyłącza normalizację bez przebudowy
+       #   PL_TTS_PRONUNCIATIONS: /data/pronunciations.yaml   # własna wymowa (domyślna ścieżka)
    ```
 
    Gotowy plik: [docker-compose.example.yaml](docker-compose.example.yaml).
@@ -307,13 +321,61 @@ curl -LO https://huggingface.co/WitoldG/polish_piper_models/resolve/main/$v.onnx
 Po `docker compose up -d piper` przeładuj integrację Wyoming w HA: nowy głos pojawi się na
 liście głosów Pipera. Głos można też wgrać przez panel WWW (`--web-server`).
 
+## Konfiguracja
+
 | Co | Gdzie |
 |---|---|
 | Argumenty Pipera (głos, tempo, pauzy, panel) | `command:`, jak w oryginalnym `wyoming-piper` |
 | Wyłączenie normalizacji | `PL_TTS_NORMALIZE=0` w `environment:` |
-| Wymowa obcych słów i nazw | `pl_tts/pronunciations.py`: słowo → zapis „po polsku”, potem przebudowa obrazu |
+| Własna wymowa słów i imion, bez przebudowy | plik `pronunciations.yaml` w katalogu głosów (`/data`), [niżej](#własna-wymowa) |
+| Inna ścieżka pliku wymowy | `PL_TTS_PRONUNCIATIONS` w `environment:` (domyślnie `/data/pronunciations.yaml`) |
+| Wbudowany słownik wymowy | `pl_tts/pronunciations.py`: słowo → zapis „po polsku”, potem przebudowa obrazu |
 | Nowe jednostki i skróty | `UNITS` i `ABBREVIATIONS` w `pl_tts/normalize.py` |
 | Nowsza wersja słownika Morfeusza | `MORFEUSZ_VERSION` w `Dockerfile` (lista: download.sgjp.pl/morfeusz/) |
+
+### Własna wymowa
+
+Wbudowany słownik zna m.in. „Jarvis” → „Dżarwis”, „iPhone” → „ajfon”, „Home Assistant” →
+„Hołm Asystent”. Własne słowa (imiona, nazwy urządzeń, asystentów) dopisz w pliku
+`pronunciations.yaml` w katalogu głosów, czyli tym podmontowanym jako `/data`
+(np. `./piper/models/pronunciations.yaml`). Wzór:
+[pronunciations.example.yaml](pronunciations.example.yaml).
+
+```yaml
+Jarvis: Dżarwis
+Alexa: Aleksa
+Home Assistancie: Hołm Asystencie
+"1:1": łan on łan
+```
+
+- Zapis po prawej to tekst, który ma usłyszeć espeak, napisany „po polsku”.
+- Wielkość liter nie ma znaczenia: „jarvis”, „Jarvis” i „JARVIS” brzmią tak samo. Wyjątek to
+  skróty pisane wielkimi literami (np. `OK`): pasują tylko w takim zapisie i bez końcówek.
+- Polskie końcówki przechodzą same: „Jarvisa”, „z Jarvisem”, „o Jarvisie”, „iPhone'a”,
+  „na iPhonie”, „Alexę”. Wymiany głosek („Assistant” → „w Assistancie”) trzeba dopisać jako
+  osobne hasło.
+- Wpis z pliku wygrywa z wbudowanym słownikiem.
+- Zmiany działają od następnego zdania, bez restartu kontenera. W dzienniku pojawia się
+  `Loaded N own pronunciations from /data/pronunciations.yaml`.
+- Błędny plik nie psuje mowy: błąd trafia do dziennika, a w użyciu zostaje poprzednia wersja
+  słownika. Hasła, które nie są tekstem, są pomijane z ostrzeżeniem `skipping`.
+
+#### FAQ: własna wymowa
+
+**Dopisałem słowo, a nadal brzmi źle.** Sprawdź `docker logs piper | grep -E "normalize|pronunciations"`.
+Jeśli nie ma linii `Loaded … own pronunciations`, plik leży w złym miejscu: musi być w katalogu
+podmontowanym jako `/data` albo pod ścieżką z `PL_TTS_PRONUNCIATIONS`. Jeśli w linii `normalize`
+nie ma Twojego zapisu, słowo w tekście wygląda inaczej niż hasło, np. ma inną końcówkę z
+wymianą głosek. Dopisz wtedy tę formę osobno.
+
+**W dzienniku: `skipping 61: 'łan on łan' (word and spoken form must be quoted text)`.**
+YAML czyta niektóre zapisy bez cudzysłowu jako liczby (`1:1` to 61, `2026` to liczba). Weź
+hasło w cudzysłów: `"1:1": łan on łan`. Ten sam komunikat pojawia się przy pustej wymowie
+(`Jarvis:` bez tekstu).
+
+**W dzienniku: `Own pronunciations not loaded, keeping the previous ones` i `expected a mapping`.**
+Plik musi być listą par `słowo: wymowa`, a nie listą z myślnikami (`- Jarvis`). Popraw plik
+i zapisz go: zostanie wczytany przy następnym zdaniu.
 
 ## Jak to działa w środku
 
@@ -328,6 +390,9 @@ liście głosów Pipera. Głos można też wgrać przez panel WWW (`--web-server
   pocztowe, ułamki, godziny i przedziały, czasy trwania, daty, lata, liczebniki porządkowe,
   liczby rzymskie, przedziały liczb, ilości z jednostkami, liczby ujemne, dziesiętne i
   pozostałe liczby.
+- **`pl_tts/pronunciations.py`** to wbudowany słownik wymowy oraz wczytywanie własnego pliku
+  YAML. `run.py` przed każdym tekstem sprawdza datę zmiany pliku i przy zmianie przebudowuje
+  słownik.
 - **`pl_tts/numbers.py`** zamienia liczby na słowa: główne, porządkowe, zbiorowe („dwoje”,
   „pięciorgiem”), w każdym przypadku i rodzaju.
 - **`pl_tts/morph.py`** pyta Morfeusza 2 o słowo po liczbie (rodzaj, liczba, przypadek) i
@@ -338,12 +403,14 @@ liście głosów Pipera. Głos można też wgrać przez panel WWW (`--web-server
 
 ## Rozwój i testy
 
-Testy (378 przypadków: tekst → oczekiwane słowa) uruchamia się w obrazie, bo tam jest Morfeusz:
+Testy (434 przypadki: tekst → oczekiwane słowa, plik wymowy) uruchamia się w obrazie, bo tam jest Morfeusz:
 
 ```sh
 docker compose build piper
 docker run --rm --entrypoint bash \
-  -v "$PWD/home-assistant-polish-piper/tests:/usr/src/tests:ro" local/polish-piper:2.5.2 \
+  -v "$PWD/home-assistant-polish-piper/tests:/usr/src/tests:ro" \
+  -v "$PWD/home-assistant-polish-piper/pronunciations.example.yaml:/usr/src/pronunciations.example.yaml:ro" \
+  local/polish-piper:2.5.2 \
   -c "cd /usr/src && .venv/bin/pip3 install -q pytest && .venv/bin/python3 -m pytest -q tests"
 ```
 

@@ -260,6 +260,15 @@ def _obl_part(stem: str, case: str) -> str:
     return stem + ("oma" if case == "inst" else "u")
 
 
+# "tysiąc" in the oblique cases: (after 1, after 2+)
+_OBL_THOUSAND = {
+    "gen": ("tysiąca", "tysięcy"),
+    "dat": ("tysiącowi", "tysiącom"),
+    "inst": ("tysiącem", "tysiącami"),
+    "loc": ("tysiącu", "tysiącach"),
+}
+
+
 def declined(n: int, case: str, gender: str) -> str:
     """Cardinal agreeing in case and gender with the noun:
     case: nom/gen/dat/acc/inst/loc; gender: m1, m2, m3, f, n, col.
@@ -279,6 +288,14 @@ def declined(n: int, case: str, gender: str) -> str:
         if case in ("nom", "acc"):
             return base
         return stem + tail + {"gen": "ga", "loc": "gu", "dat": "gu", "inst": "giem"}[case]
+    if 1000 <= n <= 999_999 and case not in ("nom", "acc"):
+        # "do 1500 km" -> do tysiąca pięciuset, "z 2000 osób" -> z dwóch tysięcy
+        k, rest = divmod(n, 1000)
+        thousand = _OBL_THOUSAND[case][0 if k == 1 else 1]
+        words = [thousand] if k == 1 else [declined(k, case, "m3"), thousand]
+        if rest:
+            words.append("jeden" if rest == 1 else declined(rest, case, gender))
+        return " ".join(words)
     if not 2 <= n <= 999:
         return cardinal(n, feminine=(gender == "f"))
     if case in ("nom", "acc"):

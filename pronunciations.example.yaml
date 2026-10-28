@@ -1,0 +1,14 @@
+# Własna wymowa dla Polish Piper: „słowo: jak ma brzmieć”.
+# Skopiuj jako pronunciations.yaml do katalogu z głosami (wolumen /data).
+# Zmiany działają od następnego zdania, bez restartu kontenera.
+#
+# - wielkość liter nie ma znaczenia („jarvis”, „Jarvis”, „JARVIS”),
+# - polskie końcówki przechodzą same: „Jarvisa” -> „Dżarwisa”, „iPhone'a” -> „ajfona”,
+# - formy z wymianą głosek wpisz osobno (np. „w Home Assistancie”),
+# - wpis z pliku wygrywa z wbudowanym słownikiem,
+# - teksty z dwukropkiem lub same liczby weź w cudzysłów („"1:1": łan on łan”).
+
+Jarvis: Dżarwis
+Alexa: Aleksa
+Home Assistancie: Hołm Asystencie
+"1:1": łan on łan

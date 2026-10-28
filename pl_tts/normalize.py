@@ -147,7 +147,8 @@ UNITS: dict[str, tuple[str, str, str, str, bool]] = {
     "l": ("litr", "litry", "litrów", "litra", False),
     "hPa": ("hektopaskal", "hektopaskale", "hektopaskali", "hektopaskala", False),
     "lx": ("luks", "luksy", "luksów", "luksa", False),
-    "ppm": ("część na milion", "części na milion", "części na milion", "części na milion", True),
+    # read as the abbreviation (air quality): espeak says "ppm" as one word
+    "ppm": ("ppm", "ppm", "ppm", "ppm", False),
     "µg/m³": ("mikrogram na metr sześcienny", "mikrogramy na metr sześcienny", "mikrogramów na metr sześcienny", "mikrograma na metr sześcienny", False),
     "dBm": ("decybel na miliwat", "decybele na miliwat", "decybeli na miliwat", "decybela na miliwat", False),
     "dB": ("decybel", "decybele", "decybeli", "decybela", False),
@@ -322,9 +323,10 @@ def _decline_phrase(phrase: str, number: str, case: str) -> str | None:
 
 
 def _quantity_oblique(n: int, unit: str, case: str) -> str | None:
-    one, _, _, _, feminine = UNITS[unit]
+    one, few, many, frac, feminine = UNITS[unit]
     gender = "f" if feminine else (morph.noun_gender(one.split()[0]) or "m3")
-    phrase = _decline_phrase(one, "sg" if n == 1 else "pl", case)
+    # indeclinable units ("do 5 ppm" -> do pięciu ppm): only the numeral changes
+    phrase = one if one == few == many == frac else _decline_phrase(one, "sg" if n == 1 else "pl", case)
     if phrase is None:
         return None
     return f"{declined(abs(n), case, gender)} {phrase}"
@@ -359,15 +361,65 @@ _EMOJI = re.compile(
     "[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U00002B00-\U00002BFF"
     "\U0000FE0F\U0000200D\U000E0020-\U000E007F]+"
 )
-# Words matched case-insensitively; all-caps abbreviations (OK, PR) only as
-# written, so "ok." (około) or "pr" inside text are left alone
-_PRONUNCIATION_KEY = {k.lower(): v for k, v in PRONUNCIATIONS.items()}
-_PRONUNCIATION_RE = re.compile(
-    "|".join(
-        (rf"(?<![\w-]){re.escape(k)}(?![\w-])" if k.isupper() else rf"(?<![\w-])(?i:{re.escape(k)})(?![\w-])")
-        for k in sorted(PRONUNCIATIONS, key=len, reverse=True)
-    )
-)
+# Polish case endings after a foreign word, also after an apostrophe: "Jarvisa",
+# "z Jarvisem", "o Jarvisie", "iPhone'a"; the spoken form gets the same ending
+_ENDINGS = ("owi", "ami", "ach", "em", "om", "ie", "ów", "a", "u", "e", "y", "i", "ę", "ą", "o")
+_ENDING_RE = "(?:['’]?(?:" + "|".join(_ENDINGS) + "))"
+
+
+def _pronunciation_patterns(entries: dict[str, str]) -> tuple[dict[str, str], dict[str, str], re.Pattern[str]]:
+    """Lookup tables and one regex for all entries. Words are matched
+    case-insensitively with an optional ending; all-caps abbreviations (OK, PR)
+    only as written and without endings, so "ok." (około) or "pr" inside text
+    are left alone. A silent final e is dropped before an ending ("na iPhonie"
+    -> na ajfonie, "z YouTubem" -> z Jutubem) and a final -a is replaced by it
+    ("zapytaj Alexę" -> Aleksę, "o Alexie" -> Aleksie)."""
+    words = {k.lower(): v for k, v in entries.items()}
+    stems: dict[str, str] = {}
+    alternatives: list[tuple[int, str]] = []
+    for k, v in entries.items():
+        if k.isupper():
+            alternatives.append((len(k), re.escape(k)))
+        elif not k[-1].isalpha():
+            alternatives.append((len(k), f"(?i:{re.escape(k)})"))
+        else:
+            alternatives.append((len(k), f"(?i:{re.escape(k)}){_ENDING_RE}?"))
+            if k[-1] in "eE" and len(k) > 3 and v[-1:].lower() not in "aeiouyąęó":
+                stems[k[:-1].lower()] = v
+            elif k[-1] in "aA" and len(k) > 3 and v[-1:] == "a":
+                stems[k[:-1].lower()] = v[:-1]
+            else:
+                continue
+            alternatives.append((len(k) - 1, f"(?i:{re.escape(k[:-1])}){_ENDING_RE}"))
+    alternatives.sort(key=lambda a: a[0], reverse=True)
+    pattern = re.compile(r"(?<![\w-])(?:" + "|".join(a[1] for a in alternatives) + r")(?![\w-])")
+    return words, stems, pattern
+
+
+def set_user_pronunciations(entries: dict[str, str]) -> None:
+    """Own pronunciations on top of pronunciations.py (they win on the same word)."""
+    global _PRONUNCIATION_WORDS, _PRONUNCIATION_STEMS, _PRONUNCIATION_RE
+    # the same word written differently ("jarvis" in the file): the file wins
+    own = {k.lower() for k in entries}
+    merged = {k: v for k, v in PRONUNCIATIONS.items() if k.lower() not in own} | entries
+    _PRONUNCIATION_WORDS, _PRONUNCIATION_STEMS, _PRONUNCIATION_RE = _pronunciation_patterns(merged)
+
+
+def _pronounce(m: re.Match[str]) -> str:
+    text = m.group(0)
+    lower = text.lower()
+    if lower in _PRONUNCIATION_WORDS:
+        return _PRONUNCIATION_WORDS[lower]
+    for ending in _ENDINGS:
+        if lower.endswith(ending):
+            base = lower[: -len(ending)].rstrip("'’")
+            spoken = _PRONUNCIATION_WORDS.get(base) or _PRONUNCIATION_STEMS.get(base)
+            if spoken:
+                return spoken + ending
+    return text
+
+
+_PRONUNCIATION_WORDS, _PRONUNCIATION_STEMS, _PRONUNCIATION_RE = _pronunciation_patterns(PRONUNCIATIONS)
 _ROMAN = re.compile(r"^M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$")
 _ROMAN_VALUES = {"M": 1000, "D": 500, "C": 100, "L": 50, "X": 10, "V": 5, "I": 1}
 _LOC_PREPS = {"w", "we", "na", "o", "przy", "po"}
@@ -448,7 +500,7 @@ def normalize(text: str) -> str:
     )
 
     # Foreign words and names spelled the Polish way (pronunciations.py)
-    t = _PRONUNCIATION_RE.sub(lambda m: _PRONUNCIATION_KEY[m.group(0).lower()], t)
+    t = _PRONUNCIATION_RE.sub(_pronounce, t)
 
     # 1 013 / 1 000 000 -> 1013 (thousands separated by spaces)
     t = _sub(r"\b(\d{1,3})(?: (\d{3}))+\b", lambda m: m.group(0).replace(" ", ""), t)
@@ -660,6 +712,17 @@ def normalize(text: str) -> str:
         number_range,
         t,
     )
+
+    # od 400 do 1000 ppm -> od czterystu do tysiąca ppm (both numbers in the genitive)
+    def from_to(m: re.Match[str]) -> str:
+        unit = m.group(4)
+        if unit in _CURRENCY:
+            return m.group(0)
+        one, _, _, _, feminine = UNITS[unit]
+        gender = "f" if feminine else (morph.noun_gender(one.split()[0]) or "m3")
+        return f"{m.group(1)} {declined(int(m.group(2)), 'gen', gender)} do {_quantity(m.group(3), unit, ['do'])}"
+
+    t = _sub(rf"\b([Oo]d)\s+(\d{{1,6}})\s+do\s+(\d{{1,6}})\s?({_UNIT_RE})(?![\wąćęłńóśźż])", from_to, t)
 
     # Quantities: -3,5°C, 50 km/h, 92%, 72 kg
     t = _sub(

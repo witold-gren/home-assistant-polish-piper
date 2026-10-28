@@ -10,7 +10,7 @@ services:
       - "10200:10200"            # Wyoming - address for Home Assistant
       - "10205:5000"             # optional: web panel for voices
     volumes:
-      - ./piper/models:/data     # voices: *.onnx + *.onnx.json
+      - ./piper/models:/data     # voices: *.onnx + *.onnx.json, own pronunciations.yaml
       - /etc/localtime:/etc/localtime:ro
     # Arguments as in rhasspy/wyoming-piper (the image adds --uri and --data-dir itself)
     command:
@@ -24,3 +24,4 @@ services:
       # - --web-server-allow=192.168.1.0/24
     # environment:
     #   PL_TTS_NORMALIZE: "0"            # turns normalization off without rebuilding
+    #   PL_TTS_PRONUNCIATIONS: /data/pronunciations.yaml   # own pronunciations (default path)
