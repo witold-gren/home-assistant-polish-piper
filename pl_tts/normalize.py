@@ -480,6 +480,11 @@ def normalize(text: str) -> str:
     # Emojis and pictographs are not read
     t = _EMOJI.sub("", t)
 
+    # ".." is a typo for "." or "...": espeak-ng keeps the second dot for the next
+    # text, which then starts with a spoken "kropka"
+    t = re.sub(r"(?<!\.)\.\.(?!\.)", ".", t)
+    t = re.sub(r"\.{4,}", "...", t)
+
     # E-mail and web addresses: jan.kowalski@gmail.com -> jan kropka kowalski małpa gmail kropka com
     t = _sub(
         r"\b([\w.+-]+)@([\w-]+(?:\.[\w-]+)+)\b",

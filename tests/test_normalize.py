@@ -270,3 +270,18 @@ def test_ordinal(n: int, form: str, words: str) -> None:
 )
 def test_declined(n: int, case: str, gender: str, words: str) -> None:
     assert declined(n, case, gender) == words
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("To jest test..", "To jest test."),
+        ("Uwaga.. Pranie skończone.", "Uwaga. Pranie skończone."),
+        ("No nie wiem...", "No nie wiem..."),
+        ("No nie wiem.....", "No nie wiem..."),
+        ("Koniec.", "Koniec."),
+    ],
+)
+def test_repeated_dots_leave_nothing_for_the_next_text(text, expected):
+    assert normalize(text) == expected
+    assert normalize(normalize(text)) == expected

@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/). Numer wersji t
 `wyoming-piper` w obrazie; poprawki samej normalizacji na tym samym Piperze dostają dopisek
 `-2`, `-3`… (np. `2.5.2-2`).
 
+## [2.5.2-3] - 2026-11-06
+
+### Poprawione
+- Podwójna kropka na końcu tekstu („dzieciaki..”): espeak-ng zostawiał drugą kropkę na następny
+  tekst, który zaczynał się od słowa „kropka”. `..` staje się kropką, cztery i więcej kropek
+  wielokropkiem.
+- 439 testów.
+
 ## [2.5.2-2] - 2026-10-28
 
 ### Dodane
