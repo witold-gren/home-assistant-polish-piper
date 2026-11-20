@@ -4,7 +4,9 @@ espeak-ng (Polish) reads English words letter by letter or with Polish rules
 ("Review" -> "rewiew"). Each entry is written as it should sound in Polish;
 matching is case-insensitive and whole-word, Polish case endings are carried
 over ("Jarvisa" -> "Dżarwisa", see normalize.py). Add words heard wrong in
-`docker logs piper | grep normalize`. Own words without rebuilding the image go
+`docker logs piper | grep normalize`, but only when espeak-ng gets them wrong:
+words it already reads right (HomePod, Volvo, OK) need no entry. Spell with
+Polish letters as espeak reads them: "si" is ś, so "sync" is "synk", not "sink". Own words without rebuilding the image go
 to a YAML file (default /data/pronunciations.yaml), read by UserPronunciations.
 """
 
@@ -23,13 +25,11 @@ PRONUNCIATIONS: dict[str, str] = {
     "review": "riwju",
     "meeting": "miting",
     "call": "kol",
-    "sync": "sink",
+    "sync": "synk",
     "PR": "pi ar",
     "1:1": "łan on łan",
     # Home / devices
     "Home Assistant": "Hołm Asystent",
-    "HomePod": "Hołm Pod",
-    "HomeKit": "Hołm Kit",
     "iPhone": "ajfon",
     "iPad": "ajpad",
     "MacBook": "Mekbuk",
@@ -41,20 +41,23 @@ PRONUNCIATIONS: dict[str, str] = {
     "Wi-Fi": "łifi",
     "WiFi": "łifi",
     "Bluetooth": "blutut",
-    "smart": "smart",
-    "Volvo": "Wolwo",
     "Frigate": "Frigejt",
     "Reolink": "Riolink",
     "eufy": "jufi",
-    "Netatmo": "Netatmo",
     "Philips Hue": "Filips Hju",
     "Hue": "Hju",
     "Jarvis": "Dżarwis",
-    "OK": "okej",
     "e-mail": "imejl",
     "email": "imejl",
 }
 
+
+# Word stems espeak-ng reads wrong in every form. They are replaced inside words,
+# so all endings and derived words follow: "Ewangelii", "ewangelista", "ewangelicki".
+STEMS: dict[str, str] = {
+    # espeak-ng's rule for "Angelika" (ng before el -> ndż) also gives "ewandżelia"
+    "ewangel": "ewanghel",
+}
 
 def load_file(path: str | Path) -> dict[str, str]:
     """Read a YAML mapping "word: spoken form". Entries that are not text are

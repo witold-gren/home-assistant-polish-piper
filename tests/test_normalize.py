@@ -170,6 +170,23 @@ CASES = [
     ("Stężenie od 400 do 1000 ppm", "Stężenie od czterystu do tysiąca ppm"),
     ("Od 1 do 5 km, od 2 do 4 kg.", "Od jednego do pięciu kilometrów, od dwóch do czterech kilogramów."),
     ("do 1000 km, bez 2000 osób, przy 1500 ppm", "do tysiąca kilometrów, bez dwóch tysięcy osób, przy tysiącu pięciuset ppm"),
+    # --- stems espeak-ng reads wrong in every form ("ewandżelia")
+    ("Czytanie z Ewangelii według świętego Jana.", "Czytanie z Ewanghelii według świętego Jana."),
+    ("Ewangelia na dziś", "Ewanghelia na dziś"),
+    ("ewangelista, ewangelicki, ewangelizacja", "ewanghelista, ewanghelicki, ewanghelizacja"),
+    ("EWANGELIA", "EWANGHELIA"),
+    ("Angelika", "Angelika"),
+    # --- "około" after another preposition means "roughly": that preposition sets the case
+    ("Otwórz okno na około 20 minut", "Otwórz okno na około dwadzieścia minut"),
+    ("Wrócę za około 5 minut.", "Wrócę za około pięć minut."),
+    ("Spadek o około 5°C", "Spadek o około pięć stopni Celsjusza"),
+    ("na ok. 15 min", "na około piętnaście minut"),
+    ("Z około 20 osobami", "Z około dwudziestoma osobami"),
+    ("Po około 10 minutach", "Po około dziesięciu minutach"),
+    ("Około 20 minut", "Około dwudziestu minut"),
+    ("Do około 20 minut", "Do około dwudziestu minut"),
+    ("bez około 5 osób", "bez około pięciu osób"),
+    ("Mieszka koło 3 lat", "Mieszka koło trzech lat"),
     # --- durations
     ("Pozostało 1:23:45", "Pozostało jedna godzina dwadzieścia trzy minuty czterdzieści pięć sekund"),
     ("Minutnik 0:05:00", "Minutnik pięć minut"),
@@ -204,7 +221,7 @@ CASES = [
     ("ul. Kwiatowa 30", "ulica Kwiatowa trzydzieści"),
     ("np. rolety, światło itd.", "na przykład rolety, światło i tak dalej."),
     ("ok. 40 km", "około czterdziestu kilometrów"),
-    ("OK, zrobione", "okej, zrobione"),
+    ("OK, zrobione", "OK, zrobione"),  # espeak-ng says o-KEJ itself
     # --- unchanged text
     ("Witaj w domu, Anno!", "Witaj w domu, Anno!"),
     ("Włączam światło w salonie.", "Włączam światło w salonie."),

@@ -30,6 +30,7 @@ Repozytorium jest tylko po polsku, bo rozwiązuje problem specyficzny dla język
 - [Jak do tego doszliśmy](#jak-do-tego-doszliśmy)
 - [Co robi ta wersja, a czego nie robi oryginał](#co-robi-ta-wersja-a-czego-nie-robi-oryginał)
 - [Czego nie robi](#czego-nie-robi)
+- [Co robi espeak-ng, a co pl_tts i Morfeusz](#co-robi-espeak-ng-a-co-pl_tts-i-morfeusz)
 - [Instalacja](#instalacja)
 - [Polskie głosy](#polskie-głosy)
 - [Konfiguracja](#konfiguracja)
@@ -209,6 +210,26 @@ protokół Wyoming. Normalizację można wyłączyć zmienną `PL_TTS_NORMALIZE=
 - **Nie przyspiesza syntezy.** Normalizacja dodaje ułamek milisekundy; czas mowy zależy od
   głosu i sprzętu.
 
+## Co robi espeak-ng, a co pl_tts i Morfeusz
+
+Część poprawek można zrobić u źródła, w polskich regułach espeak-ng, bez kodu w tym obrazie.
+Sprawdziliśmy to na espeak-ng z Pipera (commit `724808c`); pomiary i łatki są w osobnym
+projekcie `espeak-ng-polish`.
+
+| Problem | espeak-ng dziś | Gdzie naprawiać |
+|---|---|---|
+| liczebnik zgodny z rzeczownikiem, godziny, daty, jednostki, liczebniki porządkowe | czyta cyfry i symbole, zawsze w mianowniku | **tutaj** (`pl_tts` + Morfeusz): forma zależy od rzeczownika i przyimka, a espeak widzi tylko jedno słowo naraz |
+| telefony, kwoty, czas z HA, identyfikatory | „+48 600 100 200” to „sześćset miliardów…” | **tutaj** |
+| `np.`, `itd.`, `itp.`, `prof.`, `św.`, `ok.`, `dr`, `mgr`, adresy e-mail | czyta dobrze | espeak; reguły tutaj dodają tylko kontekst (np. „ok.” przed liczbą) |
+| HomePod, HomeKit, Volvo, Netatmo, „OK” | czyta dobrze | espeak: wpisy usunięte ze słownika wymowy |
+| `ul.`, `al.`, `tel.`, `nr`, „AGD”, „SMS”, minus przed liczbą („-3”), iPhone, YouTube, Google, „Ewangelia” („ewandżelia”) | czyta źle | espeak: poprawki przygotowane do zgłoszenia; do tego czasu robi to `pl_tts` |
+| `m.in.`, nazwy niszowe i prywatne (Jarvis, Reolink, eufy) | czyta źle | **tutaj**: słownik espeak nie obsługuje takich zapisów albo to nie jego rola |
+
+Morfeusz i espeak-ng się nie dublują: Morfeusz daje rodzaj i przypadek rzeczownika (odmiana
+liczebników), espeak-ng zamienia litery na głoski. Gdy Piper dostanie espeak-ng z tymi
+poprawkami, odpowiednie reguły (`ul.`, `al.`, `tel.`, `nr`, część słownika wymowy) będzie
+można stąd usunąć.
+
 ## Instalacja
 
 Wymagania: Docker z Compose, procesor amd64 albo arm64 (np. Raspberry Pi 4/5, mini PC, NVIDIA
@@ -329,7 +350,7 @@ liście głosów Pipera. Głos można też wgrać przez panel WWW (`--web-server
 | Wyłączenie normalizacji | `PL_TTS_NORMALIZE=0` w `environment:` |
 | Własna wymowa słów i imion, bez przebudowy | plik `pronunciations.yaml` w katalogu głosów (`/data`), [niżej](#własna-wymowa) |
 | Inna ścieżka pliku wymowy | `PL_TTS_PRONUNCIATIONS` w `environment:` (domyślnie `/data/pronunciations.yaml`) |
-| Wbudowany słownik wymowy | `pl_tts/pronunciations.py`: słowo → zapis „po polsku”, potem przebudowa obrazu |
+| Wbudowany słownik wymowy | `pl_tts/pronunciations.py`: `PRONUNCIATIONS` (słowo → zapis „po polsku”) i `STEMS` (rdzeń zamieniany we wszystkich formach, np. „ewangel” → „ewanghel”), potem przebudowa obrazu |
 | Nowe jednostki i skróty | `UNITS` i `ABBREVIATIONS` w `pl_tts/normalize.py` |
 | Nowsza wersja słownika Morfeusza | `MORFEUSZ_VERSION` w `Dockerfile` (lista: download.sgjp.pl/morfeusz/) |
 
@@ -403,7 +424,7 @@ i zapisz go: zostanie wczytany przy następnym zdaniu.
 
 ## Rozwój i testy
 
-Testy (434 przypadki: tekst → oczekiwane słowa, plik wymowy) uruchamia się w obrazie, bo tam jest Morfeusz:
+Testy (477 przypadków: tekst → oczekiwane słowa, plik wymowy) uruchamia się w obrazie, bo tam jest Morfeusz:
 
 ```sh
 docker compose build piper

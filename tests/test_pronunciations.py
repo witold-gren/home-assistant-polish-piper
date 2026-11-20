@@ -128,3 +128,14 @@ def test_example_file_is_valid() -> None:
     entries = load_file(example)
     assert entries["Jarvis"] == "Dżarwis"
     assert entries["1:1"] == "łan on łan"
+
+
+@pytest.mark.parametrize("word", ["HomePod", "na HomePodzie", "HomeKit", "smart", "Volvo", "Netatmo", "OK"])
+def test_words_espeak_reads_right_are_left_alone(word: str) -> None:
+    # espeak-ng gives the same phonemes with and without an entry, so there is none
+    assert normalize(word) == word
+
+
+def test_sync_is_spelled_with_y() -> None:
+    # "sink" would be read with ś (si = ś in Polish spelling)
+    assert normalize("Daily sync o 9:00") == "Daily synk o dziewiątej"

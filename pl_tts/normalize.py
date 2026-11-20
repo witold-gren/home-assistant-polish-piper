@@ -17,7 +17,7 @@ from .numbers import cardinal, decimal_words, declined, ordinal, plural_index
 
 from . import morph
 from .numbers import ordinal_form
-from .pronunciations import PRONUNCIATIONS
+from .pronunciations import PRONUNCIATIONS, STEMS
 
 # Prepositions taking the genitive: "bez 5 osób" -> bez pięciu osób (after 5+
 # the noun is genitive anyway, so the preposition decides the numeral's case)
@@ -41,9 +41,22 @@ _QTY_CASE = {
 }
 
 
+# "około", "koło", "blisko" after another preposition only mean "roughly"; the case
+# comes from that preposition: "na około 20 minut" -> na około dwadzieścia minut
+_APPROX = {"około", "koło", "blisko"}
+_APPROX_PREPS = {
+    "na", "w", "we", "za", "przez", "o", "z", "ze", "po", "przed", "nad", "pod", "między",
+    "przy", "do", "od", "bez", "dla", "u",
+}
+
+
 def _context(text: str, end: int) -> list[str]:
-    """Up to two words before position `end` (lowercase)."""
-    return [w.lower() for w in re.findall(r"[^\W\d_]+", text[max(0, end - 40):end])[-2:]]
+    """Up to two words before position `end` (lowercase), without "około" that
+    follows a preposition."""
+    words = [w.lower() for w in re.findall(r"[^\W\d_]+", text[max(0, end - 60):end])[-3:]]
+    if len(words) >= 2 and words[-1] in _APPROX and words[-2] in _APPROX_PREPS:
+        words.pop()
+    return words[-2:]
 
 
 def _genitive_context(before: list[str]) -> bool:
@@ -147,7 +160,7 @@ UNITS: dict[str, tuple[str, str, str, str, bool]] = {
     "l": ("litr", "litry", "litrów", "litra", False),
     "hPa": ("hektopaskal", "hektopaskale", "hektopaskali", "hektopaskala", False),
     "lx": ("luks", "luksy", "luksów", "luksa", False),
-    # read as the abbreviation (air quality): espeak says "ppm" as one word
+    # read as the abbreviation (air quality): espeak spells it "pe pe em"
     "ppm": ("ppm", "ppm", "ppm", "ppm", False),
     "µg/m³": ("mikrogram na metr sześcienny", "mikrogramy na metr sześcienny", "mikrogramów na metr sześcienny", "mikrograma na metr sześcienny", False),
     "dBm": ("decybel na miliwat", "decybele na miliwat", "decybeli na miliwat", "decybela na miliwat", False),
@@ -199,6 +212,8 @@ ABBREVIATIONS: list[tuple[str, str]] = [
     (r"\btzn\.", "to znaczy"),
     (r"\bnp\.", "na przykład"),
     (r"\bok\.(?=\s*\d)", "około"),
+    # ul., al., tel., nr: espeak-ng reads them right with patch 0011 of espeak-ng-polish;
+    # drop them here once the Piper image ships espeak-ng with it
     (r"\bul\.", "ulica"),
     (r"\bal\.", "aleja"),
     (r"\bpl\.(?=\s+[A-ZĄĆĘŁŃÓŚŹŻ])", "plac"),
@@ -420,6 +435,14 @@ def _pronounce(m: re.Match[str]) -> str:
 
 
 _PRONUNCIATION_WORDS, _PRONUNCIATION_STEMS, _PRONUNCIATION_RE = _pronunciation_patterns(PRONUNCIATIONS)
+_STEM_RE = re.compile("|".join(re.escape(k) for k in sorted(STEMS, key=len, reverse=True)), re.IGNORECASE)
+
+
+def _respell_stem(m: re.Match[str]) -> str:
+    text, spoken = m.group(0), STEMS[m.group(0).lower()]
+    if text.isupper():
+        return spoken.upper()
+    return spoken[0].upper() + spoken[1:] if text[0].isupper() else spoken
 _ROMAN = re.compile(r"^M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$")
 _ROMAN_VALUES = {"M": 1000, "D": 500, "C": 100, "L": 50, "X": 10, "V": 5, "I": 1}
 _LOC_PREPS = {"w", "we", "na", "o", "przy", "po"}
@@ -506,6 +529,7 @@ def normalize(text: str) -> str:
 
     # Foreign words and names spelled the Polish way (pronunciations.py)
     t = _PRONUNCIATION_RE.sub(_pronounce, t)
+    t = _STEM_RE.sub(_respell_stem, t)
 
     # 1 013 / 1 000 000 -> 1013 (thousands separated by spaces)
     t = _sub(r"\b(\d{1,3})(?: (\d{3}))+\b", lambda m: m.group(0).replace(" ", ""), t)

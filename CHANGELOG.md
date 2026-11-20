@@ -4,6 +4,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/). Numer wersji t
 `wyoming-piper` w obrazie; poprawki samej normalizacji na tym samym Piperze dostają dopisek
 `-2`, `-3`… (np. `2.5.2-2`).
 
+## [2.5.2-4] - 2026-11-20
+
+### Zmienione
+- Słownik wymowy bez wpisów, które espeak-ng czyta tak samo bez zamiany: HomePod, HomeKit,
+  smart, Volvo, Netatmo. „OK” bez zamiany: espeak-ng mówi „o-KEJ”, z akcentem na drugiej
+  sylabie (zamiana na „okej” przenosiła akcent na pierwszą).
+- README: rozdział „Co robi espeak-ng, a co pl_tts i Morfeusz”.
+
+### Poprawione
+- „sync” czytane „synk”, a nie „śink” (w zapisie „sink” espeak czytał „si” jako ś).
+- „około”, „koło” i „blisko” po innym przyimku znaczą „mniej więcej”, więc przypadek wyznacza
+  ten przyimek: „na około 20 minut” → „na około dwadzieścia minut” (było „dwudziestu”),
+  „za około 5 minut” → „pięć”. Samo „około 20 minut” zostaje „około dwudziestu minut”.
+- „Ewangelia” czytana „ewangelia”, a nie „ewandżelia” (reguła espeak-ng dla „Angeliki”
+  zmieniała „ng” przed „el” w „ndż”). Nowy słownik rdzeni `STEMS` w
+  `pl_tts/pronunciations.py`: rdzeń zamieniany wewnątrz wyrazu, więc działa dla wszystkich form
+  („Ewangelii”, „ewangelista”, „ewangelicki”).
+- 477 testów.
+
 ## [2.5.2-3] - 2026-11-06
 
 ### Poprawione
